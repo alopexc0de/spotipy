@@ -4,6 +4,10 @@
 
 Spotipy is a thin client library for the Spotify Web API.
 
+
+This is my bootleg version where I have started by merging in various PRs of interest to me.
+I might also work on expanding the library and possibly even bug fixing.
+
 ## Documentation
 
 Spotipy's full documentation is online at [Spotipy Documentation](http://spotipy.readthedocs.org/).
