@@ -6,7 +6,9 @@ import sys
 import os
 import socket
 import errno
+import time
 
+start_time = time.time()
 
 PY3 = sys.version_info.major == 3
 
@@ -222,3 +224,57 @@ def obtain_token_localhost(username, scope=None, client_id=None,
     if server.auth_code:
         token_info = sp_oauth.get_access_token(server.auth_code)
         return token_info['access_token']
+
+def authorize_api(username=None, scope=None, method=None, client_id=None,
+        client_secret=None, redirect_uri=None):
+
+    ''' Gives the user a choice for how to authenticate and
+        returns the Spotipy object. Assumes that the client id
+        and secret are provided from the environment
+
+        Parameters:
+        - username - If provided, Spotipy will authorize for that user,
+                     otherwise, Spotipy will authorize with the
+                     "Client Credentials Flow"
+        - scope - The authorization scope required to perform API actions
+        - method - Choice for the user to select either 'server' or 'prompt';
+                   where 'server' will authenticate via a locally hosted server,
+                   and 'prompt' will authenticate via the old copy-paste redirect
+                   URL to console method. The server method is default
+        - client_id - The client id of your app
+        - client_secret - The client secret of your app
+        - redirect_uri - The redirect URI of your app
+    '''
+
+    if not client_id:
+        client_id = os.getenv('SPOTIPY_CLIENT_ID')
+
+    if not client_secret:
+        client_secret = os.getenv('SPOTIPY_CLIENT_SECRET')
+
+    if not redirect_uri:
+        redirect_uri = os.getenv('SPOTIPY_REDIRECT_URI')
+
+    if not username:
+        ccm = oauth2.SpotifyClientCredentials(client_id, client_secret)
+        return spotipy.Spotify(client_credentials_manager=ccm)
+
+    print("[%.2fs] Authorizing %s with this auth scope: %s" % \
+            (time.time()-start_time, username, scope))
+
+    if method == "server" or method == None:
+        token = obtain_token_localhost(username, scope)
+    elif method == "prompt":
+        token = prompt_for_user_token(username, scope)
+    else:
+        print("[%.2fs] Unable to authorize %s - Invalid method %s" % \
+                (time.time()-start_time, username, method))
+        sys.exit()
+
+    if token:
+        # Authorize with the API
+        return spotipy.Spotify(auth=token)
+    else:
+        print("[%.2fs] Unable to authorize %s - Did they approve the oauth login?" % \
+                (time.time()-start_time, username))
+        sys.exit()
